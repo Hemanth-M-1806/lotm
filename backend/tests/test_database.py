@@ -4,6 +4,11 @@ from app.core.config import Settings
 from app.core.database import get_engine, get_sessionmaker, close_db_engine, _engine
 
 class TestDatabaseInfrastructure(unittest.TestCase):
+    def setUp(self):
+        import app.core.database as db_mod
+        db_mod._engine = None
+        db_mod._sessionmaker = None
+
     def tearDown(self):
         import app.core.database as db_mod
         db_mod._engine = None
