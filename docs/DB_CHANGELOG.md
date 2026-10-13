@@ -6,13 +6,13 @@ This changelog records all direct PostgreSQL schema changes in adherence with §
 
 | Migration ID | File | Rollback File | Description | Status |
 |---|---|---|---|---|
-| `001` | `db/changes/001_initial_schema.sql` | `db/changes/001_initial_schema_rollback.sql` | Initial schema: canonical lore (pathways, sequences, tarot_cards), users & preferences, readings & reading_cards, and schema_versions table. | Pending execution |
+| `001` | `db/changes/001_initial_schema.sql` | `db/changes/001_initial_schema_rollback.sql` | Initial schema: canonical lore (pathways, sequences, tarot_cards), users & preferences, readings & reading_cards, and schema_versions table. | Applied |
 
 ## Seeds
 
 | Seed ID | File | Description | Status |
 |---|---|---|---|
-| `001` | `db/seeds/001_canonical_lore.sql` | Canonical 22 Pathways and 22 Major Arcana Tarot Cards with Lord of the Mysteries lore correspondences. | Pending execution |
+| `001` | `db/seeds/001_canonical_lore.sql` | Canonical 22 Pathways and 22 Major Arcana Tarot Cards with Lord of the Mysteries lore correspondences. | Applied |
 
 ## Execution Protocol
 Migrations must be executed sequentially wrapped in transactions:

@@ -8,6 +8,8 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.health import router as health_router
+from app.api.v1.auth import router as auth_router
+from app.api.v1.readings import router as readings_router
 from app.core.config import get_settings
 from app.core.database import close_db_engine, get_engine
 from app.core.exceptions import AppException
@@ -146,6 +148,8 @@ def create_application() -> FastAPI:
 
     # Routes
     app.include_router(health_router)
+    app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(readings_router, prefix=settings.API_V1_PREFIX)
 
     return app
 

@@ -1,0 +1,250 @@
+/* ============================================================
+   LOTM TAROT — VICTORIAN BACKLUND DESIGN SYSTEM
+   All tokens, base resets, typography, and utilities.
+   §8.2 compliance: gaslit Victorian with anime-style presentation.
+   ============================================================ */
+
+/* --- DESIGN TOKENS --- */
+:root {
+  /* Surface palette */
+  --color-void:        #0b0e14;   /* True ink-black — primary background */
+  --color-deep-thames: #0d1520;   /* Deep Thames-blue — card backs, panels */
+  --color-fog:         #2a2f3c;   /* Fog gray — elevated surfaces */
+  --color-parchment:   #e8dfc5;   /* Aged parchment — readable text panels */
+  --color-parchment-dim: #b8ad95; /* Dimmed parchment — secondary text */
+
+  /* Accent palette */
+  --color-brass:       #c9a84c;   /* Tarnished brass/gold — primary accent */
+  --color-brass-dim:   #8a6f2e;   /* Dim brass — borders, dividers */
+  --color-oxblood:     #7a1c1c;   /* Oxblood — danger, emphasis */
+  --color-oxblood-bright: #a02020;/* Bright oxblood — hover states */
+  --color-beyonder:    #4a3272;   /* Spectral violet — beyonder moments, rare */
+  --color-beyonder-glow: #6d50a8; /* Beyonder glow — used very sparingly */
+
+  /* Ink tones for text */
+  --color-ink-primary:   #e8dfc5; /* == parchment for readability on dark */
+  --color-ink-secondary: #a09880; /* Muted warm — secondary content */
+  --color-ink-ghost:     #5a5448; /* Ghost — disabled, placeholder */
+
+  /* State colors */
+  --color-success:     #3d6b47;
+  --color-error:       var(--color-oxblood-bright);
+  --color-warning:     #8a6f2e;
+
+  /* Typography */
+  --font-display: 'IM Fell English', 'Georgia', serif;           /* Titles, card names */
+  --font-body:    'Cormorant Garamond', 'Palatino Linotype', serif; /* Body, readings */
+  --font-ornament:'Uncial Antiqua', 'Georgia', serif;            /* Labels, ornamental small text */
+
+  /* Type scale (major third — 1.25) */
+  --text-xs:   0.64rem;   /* 10.24px */
+  --text-sm:   0.8rem;    /* 12.8px */
+  --text-base: 1rem;      /* 16px */
+  --text-md:   1.25rem;   /* 20px */
+  --text-lg:   1.563rem;  /* 25px */
+  --text-xl:   1.953rem;  /* 31.25px */
+  --text-2xl:  2.441rem;  /* 39px */
+  --text-3xl:  3.052rem;  /* 48.8px */
+  --text-4xl:  3.815rem;  /* 61px */
+
+  /* Line heights */
+  --leading-tight:  1.2;
+  --leading-normal: 1.6;
+  --leading-relaxed:1.85;
+
+  /* Spacing scale */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+
+  /* Layout */
+  --max-reading: 56rem;   /* Max width for reading content */
+  --max-wide:    80rem;   /* Max width for wide layouts */
+
+  /* Borders */
+  --border-brass:     1px solid var(--color-brass-dim);
+  --border-parchment: 1px solid rgba(232, 223, 197, 0.15);
+  --border-radius-sm: 2px;
+  --border-radius-md: 4px;
+
+  /* Shadows */
+  --shadow-card:    0 4px 24px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4);
+  --shadow-glow-brass: 0 0 16px rgba(201, 168, 76, 0.25);
+  --shadow-glow-beyonder: 0 0 20px rgba(74, 50, 114, 0.35);
+
+  /* Transitions */
+  --ease-ritual: cubic-bezier(0.45, 0.02, 0.09, 0.98);
+  --duration-swift:  160ms;
+  --duration-normal: 300ms;
+  --duration-slow:   600ms;
+  --duration-reveal: 1200ms;
+
+  /* Z-index stack */
+  --z-base:    0;
+  --z-raised:  10;
+  --z-overlay: 100;
+  --z-modal:   1000;
+  --z-fog:     50;
+}
+
+/* --- RESET --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--color-ink-primary);
+  background-color: var(--color-void);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+img, video, svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--color-brass);
+  text-decoration: none;
+  transition: color var(--duration-swift) var(--ease-ritual);
+}
+a:hover { color: var(--color-parchment); }
+a:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 3px;
+  border-radius: var(--border-radius-sm);
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-body);
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-ink-primary);
+  background: var(--color-deep-thames);
+  border: var(--border-brass);
+  border-radius: var(--border-radius-sm);
+  padding: var(--space-3) var(--space-4);
+  width: 100%;
+  transition: border-color var(--duration-swift) var(--ease-ritual),
+              box-shadow var(--duration-swift) var(--ease-ritual);
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--color-brass);
+  box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.2);
+}
+
+/* --- TYPOGRAPHY UTILITIES --- */
+.font-display  { font-family: var(--font-display); }
+.font-body     { font-family: var(--font-body); }
+.font-ornament { font-family: var(--font-ornament); }
+
+.text-xs   { font-size: var(--text-xs); }
+.text-sm   { font-size: var(--text-sm); }
+.text-base { font-size: var(--text-base); }
+.text-md   { font-size: var(--text-md); }
+.text-lg   { font-size: var(--text-lg); }
+.text-xl   { font-size: var(--text-xl); }
+.text-2xl  { font-size: var(--text-2xl); }
+.text-3xl  { font-size: var(--text-3xl); }
+.text-4xl  { font-size: var(--text-4xl); }
+
+.text-brass     { color: var(--color-brass); }
+.text-parchment { color: var(--color-parchment); }
+.text-muted     { color: var(--color-ink-secondary); }
+.text-ghost     { color: var(--color-ink-ghost); }
+.text-oxblood   { color: var(--color-oxblood-bright); }
+.text-beyonder  { color: var(--color-beyonder-glow); }
+
+.text-center  { text-align: center; }
+.text-left    { text-align: left; }
+.italic       { font-style: italic; }
+.weight-light  { font-weight: 300; }
+.weight-normal { font-weight: 400; }
+.weight-semi   { font-weight: 600; }
+.weight-bold   { font-weight: 700; }
+
+/* --- LAYOUT UTILITIES --- */
+.container {
+  width: 100%;
+  max-width: var(--max-reading);
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+.container--wide {
+  max-width: var(--max-wide);
+}
+
+.flex   { display: flex; }
+.grid   { display: grid; }
+.hidden { display: none; }
+
+/* --- ORNAMENTAL DIVIDER --- */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--color-brass-dim);
+  font-family: var(--font-ornament);
+  font-size: var(--text-sm);
+  letter-spacing: 0.1em;
+}
+.ornament-divider::before,
+.ornament-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--color-brass-dim), transparent);
+}
+
+/* --- FOCUS VISIBILITY --- */
+:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 3px;
+}
+
+/* --- REDUCED MOTION --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- SCROLLBAR STYLING --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track { background: var(--color-void); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-brass-dim);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-brass); }

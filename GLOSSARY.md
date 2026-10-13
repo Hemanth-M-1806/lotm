@@ -22,6 +22,10 @@ _Avoid_: Playing card, Card archetype
 A recorded tarot consultation session where cards are drawn in a spread for a querent.
 _Avoid_: Divination session, Fortune, Consultation
 
+**Spread**:
+A predefined geometric arrangement and positional mapping of drawn Tarot Cards within a Reading (e.g. Single Card, Three Card, Celtic Cross).
+_Avoid_: Layout, Board, Grid, Formation
+
 **Reading Card**:
 The record of a specific Tarot Card drawn in a Reading, including its spread position and upright/reversed orientation.
 _Avoid_: Drawn card, Spread card
@@ -39,3 +43,7 @@ _Avoid_: Prediction, Fortune, Meaning
 **User**:
 An authenticated individual with secure credentials, personal reading history, and saved preferences.
 _Avoid_: Account, Profile, Member, Player
+
+**Session**:
+A bounded, cryptographically verified access authorization granted to an authenticated User.
+_Avoid_: Login key, Ticket, Cookie auth, State
