@@ -59,10 +59,10 @@ Thumbs.db
 # Project scratch files
 scratch/
 
-#Agents and there skills used
+# Agent configuration & internal docs (not for public repo)
 .agents/
-PROGRESS.md
 AGENTS.md
 LOTM_MASTER_PROMPT.md
 GLOSSARY.md
-sills-lock.json
+PROGRESS.md
+skills-lock.json
