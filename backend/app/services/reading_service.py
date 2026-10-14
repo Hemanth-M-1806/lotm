@@ -1,15 +1,22 @@
+import json
+import logging
 import secrets
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
+
+import httpx
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import get_settings
 from app.core.exceptions import NotFoundError, ValidationError
 from app.models.card import TarotCard
 from app.models.reading import Reading, ReadingCard
 from app.schemas.reading import SPREAD_CONFIG, ReadingCreate, SpreadType
+
+log = logging.getLogger(__name__)
 
 
 def _fisher_yates_sample(population: List[TarotCard], k: int) -> List[TarotCard]:
@@ -27,15 +34,15 @@ def _fisher_yates_sample(population: List[TarotCard], k: int) -> List[TarotCard]
     return pool[:k]
 
 
-def synthesize_interpretation(
+def _build_fallback_interpretation(
     spread_type: SpreadType,
     cards_with_meta: List[dict],
     question: Optional[str] = None,
 ) -> str:
-    """Deterministically synthesizes mystical interpretation based on cards and spread positions."""
+    """Deterministic fallback interpretation used when the AI service is unavailable."""
     lines = []
     if question:
-        lines.append(f"Inquiry into the Fog of History: \"{question.strip()}\"")
+        lines.append(f'Inquiry into the Fog of History: "{question.strip()}"')
         lines.append("")
 
     lines.append(f"Consultation Spread: {spread_type.value.replace('_', ' ').title()}")
@@ -60,6 +67,87 @@ def synthesize_interpretation(
         "Synthesis: The threads of fate converge. Heed the sequence progression and maintain rationality."
     )
     return "\n".join(lines)
+
+
+def _build_ai_prompt(
+    spread_type: SpreadType,
+    cards_with_meta: List[dict],
+    question: Optional[str] = None,
+) -> str:
+    """Constructs the prompt sent to the AI model."""
+    card_lines = []
+    for item in cards_with_meta:
+        card: TarotCard = item["card"]
+        pos_name: str = item["position_name"]
+        is_reversed: bool = item["is_reversed"]
+        orientation = "Reversed" if is_reversed else "Upright"
+        meaning = card.reversed_meaning if is_reversed else card.upright_meaning
+        lore = f" ({card.mystical_lore})" if card.mystical_lore else ""
+        card_lines.append(f"  - [{pos_name}] {card.name} ({orientation}): {meaning}{lore}")
+
+    cards_block = "\n".join(card_lines)
+    question_part = f'The seeker asks: "{question.strip()}"\n\n' if question else ""
+
+    return (
+        f"You are a mystical tarot reader for the Lords of the Mystic (LOTM) app, "
+        f"steeped in occult tradition, symbolism, and poetic prose.\n\n"
+        f"{question_part}"
+        f"Spread type: {spread_type.value.replace('_', ' ').title()}\n\n"
+        f"Cards drawn:\n{cards_block}\n\n"
+        f"Write a rich, atmospheric, 3–5 paragraph reading overview that:\n"
+        f"• Weaves the cards and their positions into a cohesive narrative\n"
+        f"• Uses evocative, mystical language fitting the LOTM universe\n"
+        f"• Addresses the seeker\'s question (if given) directly\n"
+        f"• Ends with a clear, actionable synthesis\n"
+        f"Do NOT repeat the card list verbatim; interpret, don't enumerate."
+    )
+
+
+async def synthesize_interpretation(
+    spread_type: SpreadType,
+    cards_with_meta: List[dict],
+    question: Optional[str] = None,
+) -> str:
+    """Calls OpenRouter (Gemma 3 27B free) to generate a mystical reading overview.
+
+    Falls back gracefully to the deterministic synthesizer if the API is
+    unavailable or the key is not configured.
+    """
+    settings = get_settings()
+
+    if not settings.OPENROUTER_API_KEY:
+        log.warning("OPENROUTER_API_KEY not set — using deterministic fallback interpretation.")
+        return _build_fallback_interpretation(spread_type, cards_with_meta, question)
+
+    prompt = _build_ai_prompt(spread_type, cards_with_meta, question)
+
+    payload = {
+        "model": settings.OPENROUTER_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.85,
+        "max_tokens": 1024,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/Hemanth-M-1806/lotm",
+        "X-Title": "LOTM Tarot App",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                content=json.dumps(payload),
+            )
+            response.raise_for_status()
+            data = response.json()
+            ai_text: str = data["choices"][0]["message"]["content"].strip()
+            return ai_text
+    except Exception as exc:  # noqa: BLE001
+        log.error("OpenRouter request failed (%s) — falling back to deterministic interpretation.", exc)
+        return _build_fallback_interpretation(spread_type, cards_with_meta, question)
 
 
 async def create_reading(
@@ -118,7 +206,7 @@ async def create_reading(
             }
         )
 
-    reading.interpretation = synthesize_interpretation(
+    reading.interpretation = await synthesize_interpretation(
         spread_type=reading_in.spread_type,
         cards_with_meta=drawn_metadata,
         question=reading_in.question,
