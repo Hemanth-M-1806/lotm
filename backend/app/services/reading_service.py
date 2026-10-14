@@ -34,38 +34,138 @@ def _fisher_yates_sample(population: List[TarotCard], k: int) -> List[TarotCard]
     return pool[:k]
 
 
+# ---------------------------------------------------------------------------
+# Per-card prediction templates keyed by (card_number, is_reversed)
+# Provide real, actionable tarot guidance for each of the 22 Major Arcana.
+# ---------------------------------------------------------------------------
+_CARD_PREDICTIONS: dict[tuple[int, bool], str] = {
+    # The Fool
+    (0, False): "A bold new chapter is opening for you. Trust your instincts and take the leap — hesitation will cost you more than a mistake would. Something unexplored is calling; answer it.",
+    (0, True):  "You may be rushing into something without enough preparation. Pause and ground yourself before committing. Check whether excitement is masking a lack of readiness.",
+    # The Magician
+    (1, False): "You already possess every resource, skill, and connection you need. Stop waiting for permission — take focused action now and watch circumstances bend to your will.",
+    (1, True):  "Energy is being wasted or misdirected. Beware of someone using clever words to manipulate. Reconnect with your core intention before investing more effort.",
+    # The High Priestess
+    (2, False): "Something important is not yet visible on the surface. Listen to your deeper intuition rather than external noise. The answer you seek will surface through stillness.",
+    (2, True):  "You are ignoring vital inner signals. Suppressed feelings or half-known truths are steering decisions unconsciously. Create space to hear what you already sense but will not say aloud.",
+    # The Empress
+    (3, False): "A period of growth, creativity, and abundance is flowering around you. Nurture your projects and relationships generously — what you tend now will bear significant fruit.",
+    (3, True):  "Stagnation or overextension is draining your vitality. You may be smothering a situation by trying to control its growth. Step back and let things breathe.",
+    # The Emperor
+    (4, False): "Establish clear structure and boundaries. Taking charge with calm authority will resolve the current uncertainty. Build foundations now — stability you create today will protect you for years.",
+    (4, True):  "Rigid control or abuse of authority is at the root of this difficulty. Either you or someone around you is leading through fear rather than strength. Flexibility is not weakness here.",
+    # The Hierophant
+    (5, False): "Seek guidance from an established mentor, tradition, or structured system. There is wisdom in proven methods — don't dismiss conventional paths out of pride.",
+    (5, True):  "Blind adherence to rules or dogma is holding you back. Question the institution or belief that feels restrictive. Your personal truth may diverge from the accepted path.",
+    # The Lovers
+    (6, False): "A significant choice aligned with your deepest values is at hand. This may involve relationships, partnerships, or a moral crossroads. Choose from the heart — not from fear or habit.",
+    (6, True):  "Misalignment of values is creating friction. A relationship or commitment is pulling you away from who you truly are. Honest examination is needed before things deepen further.",
+    # The Chariot
+    (7, False): "Victory is within reach if you harness your will and push forward with discipline. External obstacles can be overcome — the real test is maintaining inner focus under pressure.",
+    (7, True):  "Aggression without direction is scattering your efforts. You may be forcing outcomes that require a different approach. Regroup, clarify your destination, then move.",
+    # Strength
+    (8, False): "Your greatest power right now lies in patience and inner composure — not force. Approach a difficult person or situation with quiet confidence and compassion. Endurance wins.",
+    (8, True):  "Self-doubt or unmanaged fear is undermining you. Anxiety is posing as realism. Challenge the internal voice saying you are not enough; it is not telling the truth.",
+    # The Hermit
+    (9, False): "Withdraw from noise and seek your own counsel. A period of introspection will illuminate the answer far more effectively than seeking outside opinions. Solitude is productive now.",
+    (9, True):  "Isolation has tipped into avoidance. You are withdrawing from connection and support you genuinely need. Re-engage carefully — vulnerability is not a trap here.",
+    # Wheel of Fortune
+    (10, False): "A significant turning point is in motion. Circumstances are shifting in your favour; be ready to move quickly when the opportunity presents itself. Cycles turn — your tide is rising.",
+    (10, True): "Resistance to inevitable change is prolonging difficulty. Clinging to what no longer fits is the source of the stuck feeling. Release your grip and let the wheel turn.",
+    # Justice
+    (11, False): "A fair outcome is coming. Act with honesty and integrity — truth will surface and accountability will be served, whether you seek it or someone else does.",
+    (11, True): "An imbalance or injustice is at play. You may be judging yourself too harshly, or someone else is not playing fair. Examine where bias — yours or another's — is distorting the picture.",
+    # The Hanged Man
+    (12, False): "The situation requires you to pause and see it from a completely new angle. Surrender the urge to act and let go of a fixed perspective — revelation is the gift of this suspension.",
+    (12, True): "You are sacrificing too much without purpose or return. Martyrdom disguised as virtue is not noble here. Examine what you are giving away and why.",
+    # Death
+    (13, False): "A necessary ending is clearing space for transformation. Something must close — a relationship, a phase, a self-image — so that something truer can begin. Do not resist it.",
+    (13, True): "Fear of change is keeping you locked in a decaying situation. The reluctance to let go is more costly than the ending itself. What are you clinging to that no longer serves life?",
+    # Temperance
+    (14, False): "Balance, patience, and measured synthesis are the keys right now. Avoid extremes. The blending of different elements — ideas, people, approaches — will produce something greater than any one part.",
+    (14, True): "Excess or imbalance is causing harm. Something is being overdone — work, an emotion, a substance, a relationship dynamic. Recalibrate before the excess creates real damage.",
+    # The Devil
+    (15, False): "A pattern of unhealthy attachment, compulsion, or toxic dynamic is binding you more tightly than you realise. Name it clearly — awareness is the first step toward freedom.",
+    (15, True): "You are awakening to a manipulation or self-destructive pattern and beginning to break free. The chains are real but loosening. Keep moving toward clarity and independence.",
+    # The Tower
+    (16, False): "A sudden disruption or revelation is imminent. Something built on false foundations will not survive — but what falls was never truly stable. Embrace the clearing, painful as it is.",
+    (16, True): "You may be narrowly avoiding a collapse — or prolonging the inevitable by refusing to see cracks. Delayed reckoning accumulates interest. Face the instability now, on your terms.",
+    # The Star
+    (17, False): "After difficulty, genuine renewal and hope are available to you. Allow yourself to receive healing, rest, and inspiration. The dark period is passing — open to what is being offered.",
+    (17, True): "Disillusionment or cynicism is blocking recovery. You have closed off from the possibility of better things. Identify where you stopped believing and gently challenge that conclusion.",
+    # The Moon
+    (18, False): "Illusion, anxiety, or confusion is distorting your perception of a situation. Do not make major decisions in the dark. Wait for clarity; not everything is as it appears.",
+    (18, True): "Hidden fears are surfacing and can now be examined in the light. The paranoia or confusion that was running unconsciously is becoming visible — which means you can finally address it.",
+    # The Sun
+    (19, False): "Clarity, confidence, and genuine joy are accessible now. A situation that felt murky is becoming transparent. Let yourself celebrate and share your light — this energy is real.",
+    (19, True): "Pride or over-optimism may be obscuring an important nuance. Joy can be genuine while still needing some tempering with realism. Check that enthusiasm is not blocking honest appraisal.",
+    # Judgement
+    (20, False): "A powerful calling or awakening is reaching you. Something from your past — a pattern, a wound, an unfinished chapter — is ready to be resolved and transcended. Answer the call.",
+    (20, True): "Self-judgement or avoidance of accountability is keeping you trapped. You are refusing a reckoning that would ultimately free you. The longer the delay, the heavier it grows.",
+    # The World
+    (21, False): "A significant cycle is completing in your life. Wholeness, mastery, and earned fulfilment are available. Acknowledge how far you have come before rushing into whatever comes next.",
+    (21, True): "Completion feels tantalizingly close but something keeps delaying it — fear of success, an unresolved loose end, or reluctance to fully commit. Identify what is holding you at the threshold.",
+}
+
+_DEFAULT_PREDICTION_UPRIGHT = "Trust the energy of this card — it points toward an area of your life calling for attention, growth, and conscious choice."
+_DEFAULT_PREDICTION_REVERSED = "This card reversed signals inner resistance or a blocked energy. Reflect on where you may be avoiding or over-controlling the theme it represents."
+
+
+def _get_card_prediction(card: TarotCard, is_reversed: bool) -> str:
+    """Return a substantive, real-world tarot prediction for the given card and orientation."""
+    key = (card.card_number, is_reversed)
+    return _CARD_PREDICTIONS.get(key, _DEFAULT_PREDICTION_REVERSED if is_reversed else _DEFAULT_PREDICTION_UPRIGHT)
+
+
 def _build_fallback_interpretation(
     spread_type: SpreadType,
     cards_with_meta: List[dict],
     question: Optional[str] = None,
 ) -> str:
-    """Deterministic fallback interpretation used when the AI service is unavailable."""
+    """Deterministic fallback interpretation used when the AI service is unavailable.
+
+    Delivers genuine, substantive tarot predictions for each card rather than
+    LOTM lore descriptions. The LOTM setting is present only as light framing.
+    """
     lines = []
     if question:
-        lines.append(f'Inquiry into the Fog of History: "{question.strip()}"')
+        lines.append(f'Your question: "{question.strip()}"')
         lines.append("")
 
-    lines.append(f"Consultation Spread: {spread_type.value.replace('_', ' ').title()}")
-    lines.append("The crimson moon casts light upon the symbols:")
+    lines.append(f"Spread: {spread_type.value.replace('_', ' ').title()}")
     lines.append("")
 
+    # Per-card substantive predictions
     for item in cards_with_meta:
         card: TarotCard = item["card"]
         pos_name: str = item["position_name"]
         is_reversed: bool = item["is_reversed"]
-
         orientation = "Reversed" if is_reversed else "Upright"
-        meaning = card.reversed_meaning if is_reversed else card.upright_meaning
 
-        lines.append(f"• [{pos_name}] {card.name} ({orientation}):")
-        lines.append(f"  {meaning}")
-        if card.mystical_lore:
-            lines.append(f"  Occult resonance: {card.mystical_lore}")
+        prediction = _get_card_prediction(card, is_reversed)
+
+        lines.append(f"— {pos_name}: {card.name} ({orientation})")
+        lines.append(f"  {prediction}")
         lines.append("")
 
-    lines.append(
-        "Synthesis: The threads of fate converge. Heed the sequence progression and maintain rationality."
-    )
+    # Synthesis
+    n = len(cards_with_meta)
+    if n == 1:
+        single = cards_with_meta[0]
+        c: TarotCard = single["card"]
+        lines.append(
+            f"Overall Guidance: The {c.name} is your primary message. Sit with the prediction above "
+            f"and ask yourself honestly where in your current life it applies most directly."
+        )
+    else:
+        first_card: TarotCard = cards_with_meta[0]["card"]
+        last_card: TarotCard = cards_with_meta[-1]["card"]
+        lines.append(
+            f"Overall Synthesis: Moving from the energy of {first_card.name} through to {last_card.name}, "
+            f"the reading as a whole invites you to examine the connected threads above. "
+            f"Where do these themes intersect in your life right now? The pattern they form together "
+            f"is often more telling than any single card."
+        )
     return "\n".join(lines)
 
 
@@ -74,32 +174,51 @@ def _build_ai_prompt(
     cards_with_meta: List[dict],
     question: Optional[str] = None,
 ) -> str:
-    """Constructs the prompt sent to the AI model."""
+    """Constructs the prompt sent to the AI model.
+
+    The prompt requests REAL tarot predictions — specific, actionable guidance
+    about love, career, inner growth, decisions, relationships — not LOTM lore.
+    The app's aesthetic is referenced as light framing only.
+    """
     card_lines = []
     for item in cards_with_meta:
         card: TarotCard = item["card"]
         pos_name: str = item["position_name"]
         is_reversed: bool = item["is_reversed"]
         orientation = "Reversed" if is_reversed else "Upright"
-        meaning = card.reversed_meaning if is_reversed else card.upright_meaning
-        lore = f" ({card.mystical_lore})" if card.mystical_lore else ""
-        card_lines.append(f"  - [{pos_name}] {card.name} ({orientation}): {meaning}{lore}")
+        upright_m = card.upright_meaning
+        reversed_m = card.reversed_meaning
+        active_meaning = reversed_m if is_reversed else upright_m
+        card_lines.append(
+            f"  Position: {pos_name}\n"
+            f"  Card: {card.name} ({orientation})\n"
+            f"  Core meaning: {active_meaning}"
+        )
 
-    cards_block = "\n".join(card_lines)
-    question_part = f'The seeker asks: "{question.strip()}"\n\n' if question else ""
+    cards_block = "\n\n".join(card_lines)
+    question_part = (
+        f'The querent is asking: "{question.strip()}"\n'
+        f"Address this question directly in your reading.\n\n"
+    ) if question else "The querent has not posed a specific question — provide a general life guidance reading.\n\n"
 
     return (
-        f"You are a mystical tarot reader for the Lords of the Mystic (LOTM) app, "
-        f"steeped in occult tradition, symbolism, and poetic prose.\n\n"
+        f"You are an expert tarot reader providing a genuine, substantive reading.\n"
+        f"Your reading must give REAL predictions and practical guidance — not vague platitudes.\n\n"
         f"{question_part}"
         f"Spread type: {spread_type.value.replace('_', ' ').title()}\n\n"
-        f"Cards drawn:\n{cards_block}\n\n"
-        f"Write a rich, atmospheric, 3–5 paragraph reading overview that:\n"
-        f"• Weaves the cards and their positions into a cohesive narrative\n"
-        f"• Uses evocative, mystical language fitting the LOTM universe\n"
-        f"• Addresses the seeker\'s question (if given) directly\n"
-        f"• Ends with a clear, actionable synthesis\n"
-        f"Do NOT repeat the card list verbatim; interpret, don't enumerate."
+        f"Cards drawn (in position order):\n\n{cards_block}\n\n"
+        f"Write a detailed 4–6 paragraph tarot reading that:\n"
+        f"1. Interprets EACH card in its specific position with genuine meaning — what it signals about "
+        f"the querent's situation (love, career, relationships, inner life, decisions, timing).\n"
+        f"2. Reveals HOW the cards interact and what story they collectively tell.\n"
+        f"3. Provides SPECIFIC, actionable guidance — what the querent should do, avoid, or pay attention to.\n"
+        f"4. Addresses the querent's question (if given) with a direct, honest answer drawn from the cards.\n"
+        f"5. Ends with a clear synthesis of the overall message and the most important next step.\n\n"
+        f"Tone: confident, warm, insightful. You may use slightly poetic language but prioritise CLARITY "
+        f"and SPECIFICITY over mystical atmosphere. Do NOT pad with vague filler. "
+        f"Do NOT repeat the card list or their raw meanings verbatim — interpret and apply them.\n"
+        f"The app has a Victorian-occult aesthetic (Lord of the Mysteries universe) so you may use "
+        f"occasional atmospheric language, but the substance must be grounded real tarot guidance."
     )
 
 

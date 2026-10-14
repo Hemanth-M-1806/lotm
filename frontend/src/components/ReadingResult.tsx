@@ -82,10 +82,16 @@ export function ReadingResult({ reading, onNewReading }: ReadingResultProps) {
               onFlip={() => handleCardFlip(i)}
             />
             {i < flippedCount && rc.card && (
-              <div style={{ textAlign: 'center', maxWidth: '160px' }}>
+              <div style={{ textAlign: 'center', maxWidth: '180px' }}>
+                <p
+                  className="text-xs text-brass"
+                  style={{ letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 'var(--space-2)', marginBottom: 'var(--space-1)' }}
+                >
+                  {rc.is_reversed ? 'Reversed' : 'Upright'}
+                </p>
                 <p
                   className="text-sm text-parchment"
-                  style={{ fontStyle: 'italic', marginTop: 'var(--space-2)', lineHeight: 'var(--leading-relaxed)' }}
+                  style={{ fontStyle: 'italic', lineHeight: 'var(--leading-relaxed)' }}
                 >
                   {rc.is_reversed ? rc.card.reversed_meaning : rc.card.upright_meaning}
                 </p>
@@ -113,7 +119,7 @@ export function ReadingResult({ reading, onNewReading }: ReadingResultProps) {
       {showInterpretation && reading.interpretation && (
         <div className="interpretation" aria-live="polite">
           <div className="interpretation__header">
-            ✦ &nbsp;The Oracle Speaks&nbsp; ✦
+            ✦ &nbsp;Your Reading&nbsp; ✦
           </div>
           <p className="interpretation__text">{reading.interpretation}</p>
         </div>
