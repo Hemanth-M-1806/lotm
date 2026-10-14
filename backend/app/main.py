@@ -59,14 +59,19 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Request ID / Correlation Middleware
+    # Security Headers and Request ID / Correlation Middleware
     @app.middleware("http")
-    async def correlation_id_middleware(request: Request, call_next):
+    async def security_and_correlation_middleware(request: Request, call_next):
         req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
         request.state.request_id = req_id
 
         response = await call_next(request)
         response.headers["X-Request-ID"] = req_id
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "0"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none';"
         return response
 
     # Exception Handlers

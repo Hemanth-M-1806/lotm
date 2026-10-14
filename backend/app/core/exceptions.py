@@ -41,3 +41,9 @@ class PermissionDeniedError(AppException):
 class ValidationError(AppException):
     def __init__(self, message: str = "Validation failed", details: Optional[List[Any]] = None) -> None:
         super().__init__(message=message, code="VALIDATION_ERROR", status_code=422, details=details)
+
+
+class RateLimitError(AppException):
+    def __init__(self, message: str = "Rate limit exceeded. Please try again later.", details: Optional[List[Any]] = None) -> None:
+        super().__init__(message=message, code="RATE_LIMIT_EXCEEDED", status_code=429, details=details)
+

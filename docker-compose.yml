@@ -1,0 +1,91 @@
+services:
+  # ─────────────────────────────────────────────────────────────
+  # Database Service (PostgreSQL 16)
+  # ─────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: lotm_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-lotm_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-lotm_secure_password_2026}
+      POSTGRES_DB: ${DB_NAME:-lotm_tarot}
+    ports:
+      # Defaults to 5433 on host to prevent collision with local Windows PostgreSQL service on 5432
+      - "${HOST_DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-lotm_user} -d ${DB_NAME:-lotm_tarot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - lotm_net
+
+  # ─────────────────────────────────────────────────────────────
+  # Backend API Service (FastAPI)
+  # ─────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: lotm_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+      SECRET_KEY: ${SECRET_KEY:-supersecretkeythatislongerthanthirtytwochars}
+      DATABASE_URL: postgresql+psycopg://${DB_USER:-lotm_user}:${DB_PASSWORD:-lotm_secure_password_2026}@db:5432/${DB_NAME:-lotm_tarot}
+      API_V1_PREFIX: /api/v1
+      CORS_ORIGINS: http://localhost,http://localhost:80,http://localhost:3000,http://localhost:5173
+      DB_POOL_SIZE: 5
+      DB_MAX_OVERFLOW: 10
+      DB_POOL_TIMEOUT: 30
+      DB_POOL_RECYCLE: 1800
+      DB_POOL_PRE_PING: "true"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - lotm_net
+
+  # ─────────────────────────────────────────────────────────────
+  # Frontend Web Service (Nginx + React SPA)
+  # ─────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: lotm_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - lotm_net
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  lotm_net:
+    driver: bridge

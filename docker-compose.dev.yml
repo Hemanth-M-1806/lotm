@@ -1,0 +1,16 @@
+# Docker Compose Development Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  backend:
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "true"
+    volumes:
+      # Live reload mount for backend source code
+      - ./backend/app:/app/app:ro
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  frontend:
+    ports:
+      - "3000:80"

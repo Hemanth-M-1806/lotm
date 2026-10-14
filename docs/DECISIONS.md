@@ -39,3 +39,14 @@
 - **Context:** When integrating FastAPI with Psycopg 3 async engine on Windows, Uvicorn 0.36+ defaults to `ProactorEventLoop`, which is incompatible with Psycopg 3's asynchronous socket polling. Furthermore, in SQLAlchemy 2.0 async mode, calling `db.refresh()` post-commit expires loaded relationships, causing `MissingGreenlet` errors during Pydantic model serialization.
 - **Decision:** (1) Implement a custom Uvicorn runner (`backend/run.py`) utilizing `asyncio.SelectorEventLoop` on Windows. (2) Configure the async sessionmaker with `expire_on_commit=False` and preserve the eagerly populated relationship graph post-commit rather than invoking blank attribute refreshes.
 - **Consequence:** Guarantees seamless async PostgreSQL I/O under Windows development environments and prevents lazy-loading race conditions during REST response serialization.
+
+### ADR-0009: Defensive HTTP Security Headers and Authentication Rate Limiting
+- **Context:** §7.1 and OWASP Top 10 guidelines mandate defense against clickjacking, MIME-sniffing, cross-site script execution, and brute-force authentication floods.
+- **Decision:** (1) Implement global middleware injecting defensive headers (`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'self'`, `Referrer-Policy: strict-origin-when-cross-origin`). (2) Implement an in-memory sliding window rate limiter (`10 requests / 60 seconds / IP`) attached as a FastAPI dependency to `/api/v1/auth/login` and `/api/v1/auth/register`.
+- **Consequence:** Hardens API responses against browser-based vulnerability vectors and prevents automated brute-force attacks on querent accounts without adding external operational dependencies.
+
+### ADR-0010: Multi-Stage Containerization and Self-Seeding Migration Entrypoint
+- **Context:** §18.1 requires production-ready Docker deployment with minimal image footprint, non-root container users, deterministic zero-downtime database initialization without Alembic, and full service orchestration.
+- **Decision:** (1) Build backend using a 2-stage Debian Bookworm slim Dockerfile (`~85MB` compressed), creating dedicated user `lotmuser` (UID 10001). (2) Build frontend using a 2-stage Node 20 builder + Nginx 1.27 Alpine runtime (`~21MB`), reverse proxying `/api/` to backend and serving React with gzip and SPA routing. (3) Implement a container entrypoint script `backend/docker-entrypoint.sh` executing `db/run_migrations.py` prior to launching Uvicorn, guaranteeing fresh database environments are automatically migrated and seeded with canonical lore.
+- **Consequence:** Achieves fully isolated, self-initializing container deployment across any Docker host with zero hardcoded credentials and rigorous non-root security.
+

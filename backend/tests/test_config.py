@@ -6,6 +6,7 @@ class TestConfig(unittest.TestCase):
     def test_settings_load_defaults(self):
         from app.core.config import Settings
         settings = Settings(
+            _env_file=None,
             DATABASE_URL="postgresql+psycopg://lotm_user:secret@localhost:5432/lotm_tarot",
             SECRET_KEY="supersecretkeythatislongerthanthirtytwochars"
         )
